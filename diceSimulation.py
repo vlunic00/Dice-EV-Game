@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 np.set_printoptions(legacy='1.25')
 
@@ -23,12 +24,16 @@ def rollDice(ep, roll, diceRolls, current_average, expected_new_average):
     expected_new_average.append(calculateExpectedNewAverage(diceRolls, roll, ep))
     current_average.append(sum(diceRolls) / (roll + 1))
 
+
 def calculateExpectedNewAverage(diceRolls, roll, ep):
     return (sum(diceRolls) + ep[roll + 1]) / (roll + 2)
 
+def updateGlobalAverages(global_average, expected_global_average, n, roll, current_average, expected_new_average):
+    global_average[roll] = (global_average[roll] * (n - 1) + current_average[roll]) / n
+    expected_global_average[roll] = (expected_global_average[roll] * (n - 1) + expected_new_average[roll]) / n
 
 
-if __name__ == "__main__":
+def runSimulation(global_average, expected_global_average, n):
     EP_array = np.zeros(50)
     EP_array[0] = 3.5
     diceRolls = []
@@ -38,12 +43,20 @@ if __name__ == "__main__":
     calculateExpectedPayout(EP_array, rolls_left - 1)
     for roll in range(rolls_left - 1):
         rollDice(EP_array, roll, diceRolls, current_average, expected_new_average)
-        if current_average[roll - 1] > expected_new_average[roll - 1]:
-            print(f"{current_average}\n")
-            print(expected_new_average)
-            break
-            
-    print(f"{EP_array}\n")
-    print(f"{diceRolls}\n")
-    print(f"{current_average}\n")
-    print(expected_new_average)
+        updateGlobalAverages(global_average, expected_global_average, n, roll, current_average, expected_new_average)
+
+
+
+
+if __name__ == "__main__":            
+    number_of_simulations = 10000
+    global_average = np.zeros(49)
+    expected_global_average = np.zeros(49)
+    average = 0
+    for n in range(1, number_of_simulations + 1):
+        runSimulation(global_average, expected_global_average, n)
+    plt.plot(np.arange(1, 50), global_average)
+    plt.plot(np.arange(1, 50), expected_global_average)
+    plt.xlabel("Number of rolls")
+    plt.ylabel("Average roll value until roll")
+    plt.show()
